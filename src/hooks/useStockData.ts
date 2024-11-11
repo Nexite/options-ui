@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import type { StockDataResponse, StockDataHookProps, StockDataHookState } from '@/types/stock';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
 const MAX_DAYS_TO_FETCH = 100;
 
 export function useStockData({ stock, minDays, maxDays }: StockDataHookProps): Omit<StockDataHookState, 'loadingProgress'> {
@@ -17,7 +18,14 @@ export function useStockData({ stock, minDays, maxDays }: StockDataHookProps): O
       
       try {
         const response = await fetch(
-          `/api/stocks/historical?symbol=${stock}&days=${MAX_DAYS_TO_FETCH}&minDays=${minDays}&maxDays=${maxDays}`
+          `${API_BASE_URL}/customStrategyHistorical?` + 
+          new URLSearchParams({
+            username: 'nikhil',
+            symbol: stock,
+            days: String(MAX_DAYS_TO_FETCH),
+            minDays: String(minDays),
+            maxDays: String(maxDays)
+          })
         );
         
         if (!response.ok) {
@@ -26,7 +34,7 @@ export function useStockData({ stock, minDays, maxDays }: StockDataHookProps): O
 
         const { options } = await response.json();
         
-        if (!options.length) {
+        if (!options?.length) {
           throw new Error('No data available');
         }
 
