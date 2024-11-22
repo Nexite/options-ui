@@ -7,6 +7,7 @@ import type {
 } from '@/types/stock';
 import { processQuotesAndOptions } from './utils/processQuotesAndOptions';
 import { fetchHistoricalData, BATCH_SIZE } from './utils/fetchHistoricalData';
+import { fetchStockOverview } from './utils/fetchStockOverview';
 
 // Cache management
 const requestCache = new Set<string>();
@@ -15,6 +16,7 @@ const dataCache = new Map<string, Promise<[HistoricalQuote[], HistoricalOption[]
 export function useStockData({ stock, minDays, maxDays }: StockDataHookProps) {
   const [state, setState] = useState<Omit<StockDataHookState, 'loadingProgress'>>({
     data: {},
+    stockOverview: null,
     loading: true,
     error: null,
     dates: [],
@@ -45,9 +47,21 @@ export function useStockData({ stock, minDays, maxDays }: StockDataHookProps) {
       try {
         const [quotes, options] = await fetchHistoricalData(stock, loadedDays);
         const newData = processQuotesAndOptions(quotes, options, loadedDays === 0, minDays, maxDays, stock);
-        
+        let overview = state.stockOverview;
+        if (overview === null) {
+          const stockOverview = await fetchStockOverview(stock);
+          console.log('Raw stock overview:', stockOverview);
+          
+          overview = {
+            '52WeekHigh': Number(stockOverview['52WeekHigh']),
+            '52WeekLow': Number(stockOverview['52WeekLow']),
+            price: quotes[quotes.length - 1].price
+          };
+          console.log('Processed overview:', overview);
+        }
         setState(prev => ({
           data: { ...prev.data, ...newData },
+          stockOverview: overview,
           dates: Object.keys({ ...prev.data, ...newData }).sort(),
           loading: false,
           error: null
@@ -72,9 +86,7 @@ export function useStockData({ stock, minDays, maxDays }: StockDataHookProps) {
     ...state,
     loadMoreData
   } as const;
-}
-
-// Helper functions
+}// Helper functions
 function clearStockCache(stock: string) {
   for (const key of dataCache.keys()) {
     if (key.startsWith(`${stock}-`)) {
@@ -95,3 +107,4 @@ function handleFetchError(
     loading: false,
   }));
 }
+

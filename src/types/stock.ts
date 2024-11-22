@@ -1,3 +1,5 @@
+import { useStockData } from "@/hooks/useStockData";
+
 // Core option data types
 export interface BaseOptionContract {
   contractID: string;
@@ -93,8 +95,15 @@ export interface StockDataHookProps {
   maxDays: number;
 }
 
+export interface StockOverview {
+  '52WeekHigh': number;
+  '52WeekLow': number;
+  price: number;
+}
+
 export interface StockDataHookState {
   data: StockDataResponse;
+  stockOverview: StockOverview | null;
   loading: boolean;
   error: string | null;
   dates: string[];
@@ -114,4 +123,13 @@ export interface ChartProps {
   data: StockDataResponse;
   displayDays: number;
   maxScale?: number;
+}
+
+export interface StockGraphsProps {
+  stock: string;
+  minDays: number;
+  maxDays: number;
+  stockData: ReturnType<typeof useStockData>;
+  sharedMaxScale?: number;
+  onMaxScaleChange?: (scale: number) => void;
 } 

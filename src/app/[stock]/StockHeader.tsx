@@ -3,12 +3,16 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
+import { StockOverview } from '@/types/stock';
 
 interface StockHeaderProps {
   initialStock: string;
+  loading: boolean;
+  error: string | null;
+  stockOverview: StockOverview | null;
 }
 
-export default function StockHeader({ initialStock }: StockHeaderProps) {
+export default function StockHeader({ initialStock, loading, error, stockOverview }: StockHeaderProps) {
   const router = useRouter();
   const [symbol, setSymbol] = useState('');
 
@@ -31,9 +35,32 @@ export default function StockHeader({ initialStock }: StockHeaderProps) {
             >
               <ArrowLeftIcon className="h-5 w-5" />
             </button>
-            <h1 className="text-xl font-bold">
-              {initialStock}
-            </h1>
+            <div className="flex items-center gap-4">
+              <h1 className="text-xl font-bold">
+                {initialStock}
+              </h1>
+              {loading && <span className="text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Loading...</span>}
+              {error && <span className="text-sm text-red-500 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">Error: {error}</span>}
+              {stockOverview && (
+                <div className="flex items-center gap-4">
+                  {stockOverview.price && (
+                    <span className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                      ${stockOverview.price.toFixed(2)}
+                    </span>
+                  )}
+                  {stockOverview['52WeekHigh'] && (
+                    <span className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                      52W High: ${stockOverview['52WeekHigh'].toFixed(2)}
+                    </span>
+                  )}
+                  {stockOverview['52WeekLow'] && (
+                    <span className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+                      52W Low: ${stockOverview['52WeekLow'].toFixed(2)}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           
           <form onSubmit={handleSubmit} className="flex gap-2">

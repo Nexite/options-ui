@@ -2,12 +2,12 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { useStockData } from '@/hooks/useStockData';
 import { LoadingProgress } from '@/components/LoadingProgress';
 import type { StockOptionData, StockDataResponse } from '@/types/stock';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import React from 'react';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
+import { useStockData } from '@/hooks/useStockData';
 
 const StockChart = dynamic(() => import('./StockChart'), {
   ssr: false,
@@ -143,7 +143,8 @@ interface StockGraphsProps {
   stock: string;
   minDays: number;
   maxDays: number;
-  sharedMaxScale?: number;  
+  stockData: ReturnType<typeof useStockData>;
+  sharedMaxScale?: number;
   onMaxScaleChange?: (scale: number) => void;
 }
 
@@ -151,67 +152,77 @@ export default function StockGraphs({
   stock, 
   minDays, 
   maxDays, 
+  stockData,
   sharedMaxScale,
+  onMaxScaleChange 
 }: StockGraphsProps) {
   const [displayDays, setDisplayDays] = useState(minDays || 30);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [isLoadingMore, setIsLoadingMore] = useState(false);
-
-  const { data, loading, error, dates, loadMoreData } = useStockData({ 
-    stock, 
-    minDays, 
-    maxDays 
-  });
 
   useEffect(() => {
     setDisplayDays(minDays || 30);
   }, [stock, minDays]);
 
   useEffect(() => {
-    if (!loading && isLoadingMore) {
+    if (!stockData.loading && isLoadingMore) {
       setIsLoadingMore(false);
     }
-  }, [loading]);
+  }, [stockData.loading]);
+
+  useEffect(() => {
+    if (onMaxScaleChange && stockData.dates.length > 0 && !stockData.loading) {
+      const latestDate = stockData.dates[stockData.dates.length - 1];
+      const allRois = Object.values(stockData.data[latestDate]?.percentages || {})
+        .flat()
+        .map(contract => contract.annualizedRoi);
+      
+      if (allRois.length > 0) {
+        const maxRoi = Math.max(...allRois, 0);
+        onMaxScaleChange(maxRoi);
+      }
+    }
+  }, [stockData.dates.length, stockData.loading]);
 
   const handleLoadMore = () => {
     setIsLoadingMore(true);
-    loadMoreData();
+    stockData.loadMoreData();
   };
 
-  if (error) {
+  if (stockData.error) {
     return (
       <div className="text-red-500 p-4 text-center">
-        Error loading data: {error}
+        Error loading data: {stockData.error}
       </div>
     );
   }
 
-  if (loading && !isLoadingMore) {
+  if (stockData.loading && !isLoadingMore) {
     return <LoadingProgress />;
   }
 
-  if (dates.length === 0) {
+  if (stockData.dates.length === 0) {
     return <div className="text-center p-4">No data available</div>;
   }
 
   const percentages = ['75', '80', '85', '90', '95'];
-  const latestDate = dates[dates.length - 1];
-  const actualDisplayDays = Math.min(displayDays || minDays, dates.length);
+  const latestDate = stockData.dates[stockData.dates.length - 1];
+  const actualDisplayDays = Math.min(displayDays || minDays, stockData.dates.length);
 
   return (
     <div className="flex flex-col w-full relative">
       {isLoadingMore && <LoadingOverlay />}
       <SummaryTable 
-        data={data} 
-        dates={dates} 
+        data={stockData.data} 
+        dates={stockData.dates} 
         expandedRows={expandedRows}
         setExpandedRows={setExpandedRows}
       />
       <div className="flex items-center justify-center gap-4 p-4 bg-white/[0.8] dark:bg-black/[0.8] rounded-lg shadow mb-4">
         <input
           type="range"
-          min={Math.min(7, dates.length)}
-          max={dates.length}
+          min={Math.min(7, stockData.dates.length)}
+          max={stockData.dates.length}
           value={displayDays}
           onChange={(e) => setDisplayDays(Number(e.target.value))}
           className="w-48"
@@ -221,7 +232,7 @@ export default function StockGraphs({
         </span>
         <button
           onClick={handleLoadMore}
-          disabled={isLoadingMore || dates.length >= maxDays}
+          disabled={isLoadingMore || stockData.dates.length >= maxDays}
           className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Load More
@@ -229,7 +240,7 @@ export default function StockGraphs({
       </div>
       <div className="flex flex-col gap-4">
         {percentages.map((percentage) => {
-          const contracts = data[latestDate]?.percentages[percentage] || [];
+          const contracts = stockData.data[latestDate]?.percentages[percentage] || [];
           const bestContract = [...contracts].sort((a, b) => b.annualizedRoi - a.annualizedRoi)[0];
           return (
             <div key={percentage} className="bg-white/[0.8] dark:bg-black/[0.8] rounded-lg shadow w-full">
@@ -241,8 +252,8 @@ export default function StockGraphs({
                 <Suspense fallback={<div className="h-full w-full flex items-center justify-center">Loading chart...</div>}>
                   <StockChart
                     percentage={percentage}
-                    dates={dates}
-                    data={data}
+                    dates={stockData.dates}
+                    data={stockData.data}
                     displayDays={actualDisplayDays}
                     maxScale={sharedMaxScale}
                   />

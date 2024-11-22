@@ -1,6 +1,4 @@
-import StockGraphs from './StockGraphs';
-import ClientWrapper from './ClientWrapper';
-import StockHeader from './StockHeader';
+import StockPageClient from './StockPageClient';
 import { redirect } from 'next/navigation';
 
 type StockParams = Promise<{ stock: string }>;
@@ -23,19 +21,10 @@ export default async function Page(props: {
   const maxDays = parseInt(searchParams?.maxDays || '365');
 
   return (
-    <div className="min-h-screen">
-      <ClientWrapper>
-        <StockHeader initialStock={stock.toUpperCase()} />
-      </ClientWrapper>
-      <main className="p-2">
-        <ClientWrapper>
-          <StockGraphs 
-            stock={stock} 
-            minDays={minDays}
-            maxDays={maxDays}
-          />
-        </ClientWrapper>
-      </main>
-    </div>
+    <StockPageClient 
+      stock={stock.toUpperCase()}
+      minDays={minDays}
+      maxDays={maxDays}
+    />
   );
 } 
