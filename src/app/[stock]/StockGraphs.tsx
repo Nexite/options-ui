@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, Suspense, useCallback } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { useStockData } from '@/hooks/useStockData';
 import { LoadingProgress } from '@/components/LoadingProgress';
@@ -8,7 +8,6 @@ import type { StockOptionData, StockDataResponse } from '@/types/stock';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import React from 'react';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
-import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 const StockChart = dynamic(() => import('./StockChart'), {
   ssr: false,
@@ -144,18 +143,14 @@ interface StockGraphsProps {
   stock: string;
   minDays: number;
   maxDays: number;
-  onLoadingChange?: (loading: boolean) => void;
   sharedMaxScale?: number;
-  onMaxScaleChange?: (scale: number) => void;
 }
 
 export default function StockGraphs({ 
   stock, 
   minDays, 
   maxDays, 
-  onLoadingChange,
   sharedMaxScale,
-  onMaxScaleChange 
 }: StockGraphsProps) {
   const [displayDays, setDisplayDays] = useState(minDays || 30);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
