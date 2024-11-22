@@ -143,7 +143,8 @@ interface StockGraphsProps {
   stock: string;
   minDays: number;
   maxDays: number;
-  sharedMaxScale?: number;
+  sharedMaxScale?: number;  
+  onMaxScaleChange?: (scale: number) => void;
 }
 
 export default function StockGraphs({ 
