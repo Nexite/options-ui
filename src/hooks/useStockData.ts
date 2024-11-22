@@ -55,6 +55,7 @@ export function useStockData({ stock, minDays, maxDays }: StockDataHookProps) {
           overview = {
             '52WeekHigh': Number(stockOverview['52WeekHigh']),
             '52WeekLow': Number(stockOverview['52WeekLow']),
+            Name: stockOverview.Name,
             price: quotes[quotes.length - 1].price
           };
           console.log('Processed overview:', overview);

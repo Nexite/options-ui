@@ -98,6 +98,7 @@ export interface StockDataHookProps {
 export interface StockOverview {
   '52WeekHigh': number;
   '52WeekLow': number;
+  Name: string;
   price: number;
 }
 

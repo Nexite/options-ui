@@ -37,7 +37,7 @@ export default function StockHeader({ initialStock, loading, error, stockOvervie
             </button>
             <div className="flex items-center gap-4">
               <h1 className="text-xl font-bold">
-                {initialStock}
+                {initialStock} {stockOverview && stockOverview.Name && `(${stockOverview.Name})`}
               </h1>
               {loading && <span className="text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Loading...</span>}
               {error && <span className="text-sm text-red-500 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">Error: {error}</span>}
