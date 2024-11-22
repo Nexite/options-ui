@@ -8,6 +8,7 @@ import type { StockOptionData, StockDataResponse } from '@/types/stock';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import React from 'react';
 import { LoadingOverlay } from '@/components/LoadingOverlay';
+import { LoadingSpinner } from '@/components/LoadingSpinner';
 
 const StockChart = dynamic(() => import('./StockChart'), {
   ssr: false,
@@ -156,8 +157,7 @@ export default function StockGraphs({
   sharedMaxScale,
   onMaxScaleChange 
 }: StockGraphsProps) {
-  const [displayDays, setDisplayDays] = useState(0);
-  const [debouncedDisplayDays, setDebouncedDisplayDays] = useState(0);
+  const [displayDays, setDisplayDays] = useState(minDays || 30);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -167,56 +167,15 @@ export default function StockGraphs({
     maxDays 
   });
 
-  // Debounce display days updates
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedDisplayDays(displayDays);
-    }, 50); // 50ms delay
-
-    return () => clearTimeout(timer);
-  }, [displayDays]);
-
-  // Memoize the slider change handler
-  const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setDisplayDays(Number(e.target.value));
-  }, []);
+    setDisplayDays(minDays || 30);
+  }, [stock, minDays]);
 
   useEffect(() => {
     if (!loading && isLoadingMore) {
       setIsLoadingMore(false);
     }
   }, [loading]);
-
-  useEffect(() => {
-    if (onLoadingChange) {
-      onLoadingChange(loading && !isLoadingMore);
-    }
-  }, [loading, isLoadingMore, onLoadingChange]);
-
-  useEffect(() => {
-    if (dates.length > 0) {
-      setDisplayDays(dates.length);
-    }
-  }, [dates.length]);
-
-  useEffect(() => {
-    if (!loading && dates.length > 0) {
-      const allRois = Object.values(data).flatMap(dateData => 
-        Object.values(dateData.percentages).flatMap(contracts => 
-          contracts.map(contract => contract.annualizedRoi)
-        )
-      ).filter(roi => typeof roi === 'number' && !isNaN(roi));
-
-      if (allRois.length > 0) {
-        const maxRoi = Math.max(...allRois);
-        const suggestedScale = maxRoi * 1.1;
-        
-        if (!sharedMaxScale || suggestedScale > sharedMaxScale) {
-          onMaxScaleChange?.(suggestedScale);
-        }
-      }
-    }
-  }, [data, dates, loading, onMaxScaleChange, sharedMaxScale]);
 
   const handleLoadMore = () => {
     setIsLoadingMore(true);
@@ -241,7 +200,7 @@ export default function StockGraphs({
 
   const percentages = ['75', '80', '85', '90', '95'];
   const latestDate = dates[dates.length - 1];
-  const actualDisplayDays = Math.min(debouncedDisplayDays, dates.length);
+  const actualDisplayDays = Math.min(displayDays || minDays, dates.length);
 
   return (
     <div className="flex flex-col w-full relative">
@@ -255,10 +214,10 @@ export default function StockGraphs({
       <div className="flex items-center justify-center gap-4 p-4 bg-white/[0.8] dark:bg-black/[0.8] rounded-lg shadow mb-4">
         <input
           type="range"
-          min="7"
+          min={Math.min(7, dates.length)}
           max={dates.length}
           value={displayDays}
-          onChange={handleSliderChange}
+          onChange={(e) => setDisplayDays(Number(e.target.value))}
           className="w-48"
         />
         <span className="text-sm text-gray-600">
@@ -269,7 +228,7 @@ export default function StockGraphs({
           disabled={isLoadingMore || dates.length >= maxDays}
           className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoadingMore ? 'Loading...' : 'Load More'}
+          Load More
         </button>
       </div>
       <div className="flex flex-col gap-4">
