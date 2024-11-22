@@ -1,70 +1,97 @@
-import { useState, useEffect } from 'react';
-import type { StockDataResponse, StockDataHookProps, StockDataHookState } from '@/types/stock';
+import { useState, useEffect, useRef } from 'react';
+import type {
+  StockDataHookProps,
+  StockDataHookState,
+  HistoricalQuote,
+  HistoricalOption,
+} from '@/types/stock';
+import { processQuotesAndOptions } from './utils/processQuotesAndOptions';
+import { fetchHistoricalData, BATCH_SIZE } from './utils/fetchHistoricalData';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-const MAX_DAYS_TO_FETCH = 100;
+// Cache management
+const requestCache = new Set<string>();
+const dataCache = new Map<string, Promise<[HistoricalQuote[], HistoricalOption[]]>>();
 
-export function useStockData({ stock, minDays, maxDays }: StockDataHookProps): Omit<StockDataHookState, 'loadingProgress'> {
+export function useStockData({ stock, minDays, maxDays }: StockDataHookProps) {
   const [state, setState] = useState<Omit<StockDataHookState, 'loadingProgress'>>({
     data: {},
     loading: true,
     error: null,
     dates: [],
   });
+  const [loadedDays, setLoadedDays] = useState(0);
+  const prevStockRef = useRef(stock);
 
+  // Reset state when stock changes
   useEffect(() => {
-    const fetchStockData = async () => {
-      setState(prev => ({ ...prev, loading: true, error: null }));
+    if (prevStockRef.current !== stock) {
+      setLoadedDays(0);
+      requestCache.clear();
+      clearStockCache(prevStockRef.current);
+      prevStockRef.current = stock;
+    }
+  }, [stock]);
+
+  // Fetch data effect
+  useEffect(() => {
+    const fetchBatch = async () => {
+      const requestKey = `${stock}-${loadedDays}-${minDays}-${maxDays}`;
+      
+      if (requestCache.has(requestKey)) return;
+      
+      setState(prev => ({ ...prev, loading: true }));
+      requestCache.add(requestKey);
       
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/customStrategyHistorical?` + 
-          new URLSearchParams({
-            username: 'nikhil',
-            symbol: stock,
-            days: String(MAX_DAYS_TO_FETCH),
-            minDays: String(minDays),
-            maxDays: String(maxDays)
-          })
-        );
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch data');
-        }
-
-        const { options } = await response.json();
-        
-        if (!options?.length) {
-          throw new Error('No data available');
-        }
-
-        const formattedData: StockDataResponse = {};
-        options.forEach((dayData: { date: string; close: number; options: any }) => {
-          formattedData[dayData.date] = {
-            close: dayData.close,
-            percentages: dayData.options
-          };
-        });
-
-        const dates = options.map((day: { date: string }) => day.date).sort();
+        const [quotes, options] = await fetchHistoricalData(stock, loadedDays);
+        const newData = processQuotesAndOptions(quotes, options, loadedDays === 0, minDays, maxDays, stock);
         
         setState(prev => ({
-          ...prev,
-          data: formattedData,
-          dates,
+          data: { ...prev.data, ...newData },
+          dates: Object.keys({ ...prev.data, ...newData }).sort(),
           loading: false,
+          error: null
         }));
       } catch (err) {
-        setState(prev => ({
-          ...prev,
-          error: err instanceof Error ? err.message : 'An error occurred',
-          loading: false,
-        }));
+        handleFetchError(requestKey, err, setState);
       }
     };
 
-    fetchStockData();
-  }, [stock, minDays, maxDays]);
+    if (loadedDays < maxDays) {
+      fetchBatch();
+    }
+  }, [stock, loadedDays, maxDays, minDays]);
 
-  return state;
+  const loadMoreData = () => {
+    if (loadedDays < maxDays) {
+      setLoadedDays(prev => prev + BATCH_SIZE);
+    }
+  };
+
+  return {
+    ...state,
+    loadMoreData
+  } as const;
+}
+
+// Helper functions
+function clearStockCache(stock: string) {
+  for (const key of dataCache.keys()) {
+    if (key.startsWith(`${stock}-`)) {
+      dataCache.delete(key);
+    }
+  }
+}
+
+function handleFetchError(
+  requestKey: string, 
+  err: unknown, 
+  setState: React.Dispatch<React.SetStateAction<Omit<StockDataHookState, 'loadingProgress'>>>
+) {
+  requestCache.delete(requestKey);
+  setState(prev => ({
+    ...prev,
+    error: err instanceof Error ? err.message : 'An error occurred',
+    loading: false,
+  }));
 }

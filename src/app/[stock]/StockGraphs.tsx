@@ -1,19 +1,20 @@
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useStockData } from '@/hooks/useStockData';
 import { LoadingProgress } from '@/components/LoadingProgress';
-import type { StockData, StockDataResponse } from '@/types/stock';
+import type { StockOptionData, StockDataResponse } from '@/types/stock';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import React from 'react';
+import { LoadingOverlay } from '@/components/LoadingOverlay';
 
 const StockChart = dynamic(() => import('./StockChart'), {
   ssr: false,
   loading: () => <div className="h-[300px] flex items-center justify-center">Loading chart...</div>
 });
 
-function StockInfo({ data }: { data: StockData }) {
+function StockInfo({ data }: { data: StockOptionData }) {
   const formatPercentage = (value: number | undefined) => {
     if (value === undefined) return 'N/A';
     return `${(value * 100).toFixed(2)}%`;
@@ -50,6 +51,11 @@ function SummaryTable({
     return `${(value * 100).toFixed(2)}%`;
   };
 
+  const formatPrice = (value: string | number | undefined) => {
+    if (value === undefined) return 'N/A';
+    return `$${Number(value).toFixed(2)}`;
+  };
+
   const toggleRow = (percentage: string) => {
     setExpandedRows(prev => ({
       ...prev,
@@ -77,50 +83,53 @@ function SummaryTable({
         <tbody>
           {percentages.map((percentage) => {
             const contracts = data[latestDate]?.percentages[percentage] || [];
-            const sortedContracts = [...contracts].sort((a, b) => b.annualizedRoi - a.annualizedRoi);
-            const bestContract = sortedContracts[0];
-            const nextBestContracts = sortedContracts.slice(1, 6);
+            const bestContract = [...contracts].sort((a, b) => b.annualizedRoi - a.annualizedRoi)[0];
+            const nextBestContracts = contracts.slice(1);
 
             return (
               <React.Fragment key={percentage}>
-                <tr 
-                  className="border-b dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
-                  onClick={() => toggleRow(percentage)}
-                >
-                  <td className="p-4 flex items-center gap-2">
-                    {percentage}%
-                    {expandedRows[percentage] ? 
-                      <ChevronUpIcon className="h-4 w-4" /> : 
-                      <ChevronDownIcon className="h-4 w-4" />
-                    }
-                  </td>
-                  <td className="p-4">${bestContract?.strike}</td>
-                  <td className="p-4">${bestContract?.bid}</td>
-                  <td className="p-4">${bestContract?.mark}</td>
-                  <td className="p-4">${bestContract?.ask}</td>
-                  <td className="p-4">{bestContract?.contractID}</td>
-                  <td className="p-4">{bestContract?.expiration}</td>
-                  <td className="p-4">{bestContract?.daysToExpire}</td>
-                  <td className="p-4">{formatPercentage(bestContract?.roi)}</td>
-                  <td className="p-4">{formatPercentage(bestContract?.annualizedRoi)}</td>
-                </tr>
-                {expandedRows[percentage] && nextBestContracts.map((contract, idx) => (
+                {bestContract && (
                   <tr 
-                    key={`${percentage}-${contract.contractID}-${idx}`}
-                    className="bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400"
+                    className="border-b dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+                    onClick={() => toggleRow(percentage)}
                   >
-                    <td className="p-4 pl-8">↳</td>
-                    <td className="p-4">${contract.strike}</td>
-                    <td className="p-4">${contract.bid}</td>
-                    <td className="p-4">${contract.mark}</td>
-                    <td className="p-4">${contract.ask}</td>
-                    <td className="p-4">{contract.contractID}</td>
-                    <td className="p-4">{contract.expiration}</td>
-                    <td className="p-4">{contract.daysToExpire}</td>
-                    <td className="p-4">{formatPercentage(contract.roi)}</td>
-                    <td className="p-4">{formatPercentage(contract.annualizedRoi)}</td>
+                    <td className="p-4 flex items-center gap-2">
+                      {percentage}%
+                      {expandedRows[percentage] ? 
+                        <ChevronUpIcon className="h-4 w-4" /> : 
+                        <ChevronDownIcon className="h-4 w-4" />
+                      }
+                    </td>
+                    <td className="p-4">{formatPrice(bestContract.strike)}</td>
+                    <td className="p-4">{formatPrice(bestContract.bid)}</td>
+                    <td className="p-4">{formatPrice(bestContract.mark)}</td>
+                    <td className="p-4">{formatPrice(bestContract.ask)}</td>
+                    <td className="p-4">{bestContract.contractID}</td>
+                    <td className="p-4">{bestContract.expiration}</td>
+                    <td className="p-4">{bestContract.daysToExpire}</td>
+                    <td className="p-4">{formatPercentage(bestContract.roi)}</td>
+                    <td className="p-4">{formatPercentage(bestContract.annualizedRoi)}</td>
                   </tr>
-                ))}
+                )}
+                {expandedRows[percentage] && nextBestContracts.length > 0 && (
+                  nextBestContracts.map((contract, idx) => (
+                    <tr 
+                      key={`${percentage}-${contract.contractID}-${idx}`}
+                      className="bg-gray-50 dark:bg-gray-900 text-gray-600 dark:text-gray-400 border-b dark:border-gray-700/50"
+                    >
+                      <td className="p-4 pl-8">↳</td>
+                      <td className="p-4">{formatPrice(contract.strike)}</td>
+                      <td className="p-4">{formatPrice(contract.bid)}</td>
+                      <td className="p-4">{formatPrice(contract.mark)}</td>
+                      <td className="p-4">{formatPrice(contract.ask)}</td>
+                      <td className="p-4">{contract.contractID}</td>
+                      <td className="p-4">{contract.expiration}</td>
+                      <td className="p-4">{contract.daysToExpire}</td>
+                      <td className="p-4">{formatPercentage(contract.roi)}</td>
+                      <td className="p-4">{formatPercentage(contract.annualizedRoi)}</td>
+                    </tr>
+                  ))
+                )}
               </React.Fragment>
             );
           })}
@@ -147,23 +156,42 @@ export default function StockGraphs({
   sharedMaxScale,
   onMaxScaleChange 
 }: StockGraphsProps) {
-  // 1. All useState hooks first
   const [displayDays, setDisplayDays] = useState(0);
+  const [debouncedDisplayDays, setDebouncedDisplayDays] = useState(0);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // 2. Data fetching hook
-  const { data, loading, error, dates } = useStockData({ 
+  const { data, loading, error, dates, loadMoreData } = useStockData({ 
     stock, 
     minDays, 
     maxDays 
   });
 
-  // 3. All useEffect hooks
+  // Debounce display days updates
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedDisplayDays(displayDays);
+    }, 50); // 50ms delay
+
+    return () => clearTimeout(timer);
+  }, [displayDays]);
+
+  // Memoize the slider change handler
+  const handleSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setDisplayDays(Number(e.target.value));
+  }, []);
+
+  useEffect(() => {
+    if (!loading && isLoadingMore) {
+      setIsLoadingMore(false);
+    }
+  }, [loading]);
+
   useEffect(() => {
     if (onLoadingChange) {
-      onLoadingChange(loading);
+      onLoadingChange(loading && !isLoadingMore);
     }
-  }, [loading, onLoadingChange]);
+  }, [loading, isLoadingMore, onLoadingChange]);
 
   useEffect(() => {
     if (dates.length > 0) {
@@ -190,7 +218,11 @@ export default function StockGraphs({
     }
   }, [data, dates, loading, onMaxScaleChange, sharedMaxScale]);
 
-  // Early returns
+  const handleLoadMore = () => {
+    setIsLoadingMore(true);
+    loadMoreData();
+  };
+
   if (error) {
     return (
       <div className="text-red-500 p-4 text-center">
@@ -199,7 +231,7 @@ export default function StockGraphs({
     );
   }
 
-  if (loading) {
+  if (loading && !isLoadingMore) {
     return <LoadingProgress />;
   }
 
@@ -207,13 +239,13 @@ export default function StockGraphs({
     return <div className="text-center p-4">No data available</div>;
   }
 
-  // Calculate derived values
   const percentages = ['75', '80', '85', '90', '95'];
   const latestDate = dates[dates.length - 1];
-  const actualDisplayDays = Math.min(displayDays, dates.length);
+  const actualDisplayDays = Math.min(debouncedDisplayDays, dates.length);
 
   return (
-    <div className="flex flex-col w-full">
+    <div className="flex flex-col w-full relative">
+      {isLoadingMore && <LoadingOverlay />}
       <SummaryTable 
         data={data} 
         dates={dates} 
@@ -226,18 +258,24 @@ export default function StockGraphs({
           min="7"
           max={dates.length}
           value={displayDays}
-          onChange={(e) => setDisplayDays(Number(e.target.value))}
+          onChange={handleSliderChange}
           className="w-48"
         />
         <span className="text-sm text-gray-600">
           {actualDisplayDays} days
         </span>
+        <button
+          onClick={handleLoadMore}
+          disabled={isLoadingMore || dates.length >= maxDays}
+          className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoadingMore ? 'Loading...' : 'Load More'}
+        </button>
       </div>
       <div className="flex flex-col gap-4">
         {percentages.map((percentage) => {
           const contracts = data[latestDate]?.percentages[percentage] || [];
           const bestContract = [...contracts].sort((a, b) => b.annualizedRoi - a.annualizedRoi)[0];
-          
           return (
             <div key={percentage} className="bg-white/[0.8] dark:bg-black/[0.8] rounded-lg shadow w-full">
               <div className="flex justify-between items-start p-3">

@@ -37,25 +37,26 @@ interface ChartDataPoint {
   date: string;
   roi: number;
   close: number;
+  strike: number;
 }
 
 export default function StockChart({ percentage, dates, data, displayDays, maxScale }: ChartProps) {
   const displayedDates = dates.slice(-displayDays);
   
-  // Get the ROIs and close prices for displayed dates
   const chartData: ChartDataPoint[] = displayedDates.map(date => {
     const dayData = data[date];
     const contracts = dayData?.percentages[percentage] || [];
-    const bestContract = contracts.length > 0 
-      ? [...contracts].sort((a, b) => b.annualizedRoi - a.annualizedRoi)[0]
-      : null;
+    const bestContract = contracts[0];
     
     return {
       date,
       roi: bestContract?.annualizedRoi || 0,
-      close: dayData?.close || 0
+      close: dayData?.close || 0,
+      strike: bestContract ? Number(bestContract.strike) : 0
     };
   });
+
+  console.log(`Chart data for ${percentage}%:`, chartData);
 
   const averageRoi = chartData.reduce((sum, day) => sum + day.roi, 0) / chartData.length;
   const mostRecentRoi = chartData[chartData.length - 1]?.roi || 0;
@@ -89,7 +90,7 @@ export default function StockChart({ percentage, dates, data, displayDays, maxSc
             
             return [
               `${context.dataset.label}: ${(value * 100).toFixed(2)}%`,
-              `Stock Price: $${close.toFixed(2)}`
+              `Stock Price: $${Number(close).toFixed(2)}`
             ];
           }
         }

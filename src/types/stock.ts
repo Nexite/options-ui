@@ -1,5 +1,5 @@
-// Base option contract data
-export interface OptionContract {
+// Core option data types
+export interface BaseOptionContract {
   contractID: string;
   symbol: string;
   expiration: string;
@@ -8,20 +8,18 @@ export interface OptionContract {
   daysToExpire: number;
 }
 
-// Market data for an option
-export interface OptionMarketData {
+export interface MarketData {
   last: string;
   mark: string;
   bid: string;
-  bid_size: string;
   ask: string;
+  bid_size: string;
   ask_size: string;
   volume: string;
   open_interest: string;
 }
 
-// Greeks data
-export interface OptionGreeks {
+export interface Greeks {
   delta: string;
   gamma: string;
   theta: string;
@@ -30,55 +28,65 @@ export interface OptionGreeks {
   implied_volatility: string;
 }
 
-// ROI calculations
-export interface OptionROI {
+export interface ROIMetrics {
   roi: number;
   annualizedRoi: number;
 }
 
-// Complete option data combining all interfaces
-export interface StockData extends 
-  OptionContract, 
-  OptionMarketData, 
-  OptionGreeks, 
-  OptionROI {
+// Combined option data
+export type StockOptionData = BaseOptionContract & MarketData & Greeks & ROIMetrics & {
   date: string;
+};
+
+// Historical data types
+export interface HistoricalQuote {
+  date: string;
+  price: number;
 }
 
-// Stock price data
+export interface HistoricalOption {
+  date: string;
+  puts: Array<{
+    contractId: string;
+    expiration: string;
+    strike: number;
+    ask: number;
+    bid: number;
+  }>;
+}
+
+export interface ProcessedOption {
+  contractID: string;
+  expiration: string;
+  strike: number;
+  ask: number;
+  bid: number;
+  mark: number;
+  daysToExpire: number;
+  roi: number;
+  annualizedRoi: number;
+}
+
+// Response data structures
 export interface StockPriceData {
   close: number;
   '52weekHigh'?: number;
   '52weekLow'?: number;
 }
 
-// Options grouped by strike percentage
 export interface DataByPercentage {
-  [percentage: string]: StockData[];
+  [percentage: string]: StockOptionData[];
 }
 
-// Daily stock data including options
 export interface DailyStockData extends StockPriceData {
   percentages: DataByPercentage;
 }
 
-// Complete response structure
 export interface StockDataResponse {
   [date: string]: DailyStockData;
 }
 
-// API response for historical data
-export interface HistoricalOptionData {
-  date: string;
-  close: number;
-  options: DataByPercentage;
-}
-
-export interface HistoricalAPIResponse {
-  options: HistoricalOptionData[];
-}
-
-// Hook props and state
+// Hook types
 export interface StockDataHookProps {
   stock: string;
   minDays: number;
@@ -88,7 +96,22 @@ export interface StockDataHookProps {
 export interface StockDataHookState {
   data: StockDataResponse;
   loading: boolean;
-  loadingProgress: number;
   error: string | null;
   dates: string[];
+}
+
+// Chart types
+export interface ChartDataPoint {
+  date: string;
+  roi: number;
+  close: number;
+  strike: number;
+}
+
+export interface ChartProps {
+  percentage: string;
+  dates: string[];
+  data: StockDataResponse;
+  displayDays: number;
+  maxScale?: number;
 } 

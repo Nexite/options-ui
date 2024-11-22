@@ -1,5 +1,6 @@
 import StockGraphs from './StockGraphs';
 import ClientWrapper from './ClientWrapper';
+import StockHeader from './StockHeader';
 
 type StockParams = Promise<{ stock: string }>;
 type SearchParams = Promise<{ minDays?: string; maxDays?: string }>;
@@ -17,11 +18,9 @@ export default async function Page(props: {
 
   return (
     <div className="min-h-screen">
-      <header className="sticky top-0 bg-background z-10">
-        <h1 className="text-xl font-bold p-4 text-center">
-          Stock Analysis: {stock.toUpperCase()}
-        </h1>
-      </header>
+      <ClientWrapper>
+        <StockHeader initialStock={stock.toUpperCase()} />
+      </ClientWrapper>
       <main className="p-2">
         <ClientWrapper>
           <StockGraphs 

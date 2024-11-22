@@ -6,9 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "start1": "next start -p 3001",
     "lint": "next lint"
   },
   "dependencies": {
+    "@date-fns/utc": "^1.0.0",
     "@heroicons/react": "^2.1.5",
     "date-fns": "^4.1.0",
     "next": "15.0.3",
