@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { StockOverview } from '@/types/stock';
@@ -15,6 +15,13 @@ interface StockHeaderProps {
 export default function StockHeader({ initialStock, loading, error, stockOverview }: StockHeaderProps) {
   const router = useRouter();
   const [symbol, setSymbol] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +72,7 @@ export default function StockHeader({ initialStock, loading, error, stockOvervie
           
           <form onSubmit={handleSubmit} className="flex gap-2">
             <input
+              ref={inputRef}
               type="text"
               value={symbol}
               onChange={(e) => setSymbol(e.target.value)}
