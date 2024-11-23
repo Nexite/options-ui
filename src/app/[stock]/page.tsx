@@ -3,6 +3,12 @@ import { redirect } from 'next/navigation';
 
 type StockParams = Promise<{ stock: string }>;
 type SearchParams = Promise<{ minDays?: string; maxDays?: string }>;
+export async function generateMetadata({ params }: { params: StockParams }) {
+  const { stock } = await params;
+  return {
+    title: `${stock.toUpperCase()} - Options Analyzer`
+  };
+}
 
 export default async function Page(props: { 
   params: StockParams;
