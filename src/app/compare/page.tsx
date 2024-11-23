@@ -109,6 +109,7 @@ export default function ComparePage() {
             ? `${stocks.stock1.toUpperCase()}/${stocks.stock2.toUpperCase()} - Options Analysis`
             : 'Compare Stocks - Options Analysis'}
         </title>
+        <link rel="preconnect" href="https://stocks.nikhilgarg.com" />
       </Head>
       <div className="min-h-screen">
         <header className="sticky top-0 bg-background z-10 border-b dark:border-gray-800">

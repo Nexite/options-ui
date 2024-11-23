@@ -6,7 +6,13 @@ type SearchParams = Promise<{ minDays?: string; maxDays?: string }>;
 export async function generateMetadata({ params }: { params: StockParams }) {
   const { stock } = await params;
   return {
-    title: `${stock.toUpperCase()} - Options Analyzer`
+    title: `${stock.toUpperCase()} - Options Analyzer`,
+    links: [
+      {
+        rel: 'preconnect',
+        href: 'https://stocks.nikhilgarg.com'
+      }
+    ]
   };
 }
 
