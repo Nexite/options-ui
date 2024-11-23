@@ -1,25 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function StockForm() {
   const router = useRouter();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     symbol: '',
     minDays: '30',
     maxDays: '365'
   });
 
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(`/${formData.symbol}?minDays=${formData.minDays}&maxDays=${formData.maxDays}`);
+    router.push(`/${formData.symbol}`);
   };
 
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-md space-y-4">
       <div>
         <input
+          ref={inputRef}
           type="text"
           value={formData.symbol}
           onChange={(e) => setFormData(prev => ({ ...prev, symbol: e.target.value }))}
