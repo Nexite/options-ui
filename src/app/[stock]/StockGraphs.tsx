@@ -226,6 +226,7 @@ export default function StockGraphs({
           value={displayDays}
           onChange={(e) => setDisplayDays(Number(e.target.value))}
           className="w-48"
+          aria-label="Display days"
         />
         <span className="text-sm text-gray-600">
           {actualDisplayDays} days
