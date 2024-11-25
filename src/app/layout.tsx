@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import RootLayoutClient from './RootLayoutClient';
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -15,9 +14,7 @@ export default function RootLayout({
   return (
     <html suppressHydrationWarning lang="en">
       <body className="antialiased h-full overflow-auto">
-        <RootLayoutClient>
-          {children}
-        </RootLayoutClient>
+        {children}
       </body>
     </html>
   );
