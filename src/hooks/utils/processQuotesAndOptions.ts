@@ -9,12 +9,25 @@ import type {
   DataByPercentage
 } from '@/types/stock';
 
+
+function isAdjustedOption(contract: HistoricalOption['puts'][0]): boolean {
+  const temp = contract.contractId.slice(0, -9);
+  const nums = temp.match(/\d/g)?.length;
+  console.log(nums);
+  return nums !== 6;
+}
+
 function processOption(
   contract: HistoricalOption['puts'][0],
   quote: HistoricalQuote,
   minDays: number,
   maxDays: number
 ): ProcessedOption | null {
+  // we don't want adjusted options since there is not a good market for them
+  if (isAdjustedOption(contract)) {
+    return null;
+  }
+
   const expirationDate = new UTCDate(contract.expiration);
   const currentDate = new UTCDate(quote.date);
   
