@@ -11,10 +11,15 @@ import type {
 
 
 function isAdjustedOption(contract: HistoricalOption['puts'][0]): boolean {
-  const temp = contract.contractId.slice(0, -9);
-  const nums = temp.match(/\d/g)?.length;
-  console.log(nums);
-  return nums !== 6;
+  // Option format: {ticker}{optional digit if adjusted}{6 digits for date}{option type}{strike price}
+  // Example regular: AAPL240419P00150000
+  // Example adjusted: AAPL1240419P00150000
+  
+  const tickerEnd = contract.contractId.length - 15; // Remove date(6) + type(1) + strike(8)
+  const ticker = contract.contractId.slice(0, tickerEnd);
+  
+  // If ticker part contains any digits, it's an adjusted option
+  return /\d/.test(ticker);
 }
 
 function processOption(
