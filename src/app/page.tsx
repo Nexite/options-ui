@@ -63,7 +63,7 @@ export default async function Home() {
                     : 'text-red-600 dark:text-red-400'
                     }`}>
                     {parseFloat(stock.change_percentage) >= 0 ? '+' : ''}
-                    {stock.change_percentage}%
+                    {stock.change_percentage}
                   </div>
                 </a>
               ))}

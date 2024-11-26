@@ -141,8 +141,6 @@ function SummaryTable({
 
 interface StockGraphsProps {
   stock: string;
-  minDays: number;
-  maxDays: number;
   stockData: ReturnType<typeof useStockData>;
   sharedMaxScale?: number;
   onMaxScaleChange?: (scale: number) => void;
@@ -150,19 +148,17 @@ interface StockGraphsProps {
 
 export default function StockGraphs({ 
   stock, 
-  minDays, 
-  maxDays, 
   stockData,
   sharedMaxScale,
   onMaxScaleChange 
 }: StockGraphsProps) {
-  const [displayDays, setDisplayDays] = useState(minDays || 30);
+  const [displayDays, setDisplayDays] = useState(30);
   const [expandedRows, setExpandedRows] = useState<Record<string, boolean>>({});
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
-    setDisplayDays(minDays || 30);
-  }, [stock, minDays]);
+    setDisplayDays(30);
+  }, [stock]);
 
   useEffect(() => {
     if (!stockData.loading && isLoadingMore) {
@@ -207,7 +203,7 @@ export default function StockGraphs({
 
   const percentages = ['75', '80', '85', '90', '95'];
   const latestDate = stockData.dates[stockData.dates.length - 1];
-  const actualDisplayDays = Math.min(displayDays || minDays, stockData.dates.length);
+  const actualDisplayDays = Math.min(displayDays, stockData.dates.length);
 
   return (
     <div className="flex flex-col w-full relative">
@@ -233,7 +229,7 @@ export default function StockGraphs({
         </span>
         <button
           onClick={handleLoadMore}
-          disabled={isLoadingMore || stockData.dates.length >= maxDays}
+          disabled={isLoadingMore}
           className="ml-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Load More

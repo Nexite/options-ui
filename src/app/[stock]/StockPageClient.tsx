@@ -20,12 +20,12 @@ export default function StockPageClient({ stock, minDays, maxDays }: StockPageCl
         initialStock={stock} 
         loading={stockData.loading}
         error={stockData.error}
+        minDays={minDays}
+        maxDays={maxDays}
       />
       <main className="p-2">
         <StockGraphs 
           stock={stock}
-          minDays={minDays}
-          maxDays={maxDays}
           stockData={stockData}
         />
       </main>

@@ -8,10 +8,10 @@ import ClientWrapper from '../[stock]/ClientWrapper';
 import { useStockData } from '@/hooks/useStockData';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
-function StockOverviewDisplay({ 
-  stock, 
-  stockData 
-}: { 
+function StockOverviewDisplay({
+  stock,
+  stockData
+}: {
   stock: string;
   stockData: ReturnType<typeof useStockData>;
 }) {
@@ -57,16 +57,16 @@ export default function ComparePage() {
   });
 
   // Add stock data hooks for both stocks
-  const stock1Data = useStockData({ 
-    stock: stocks.stock1, 
-    minDays: 30, 
-    maxDays: 365 
+  const stock1Data = useStockData({
+    stock: stocks.stock1,
+    minDays: 30,
+    maxDays: 365
   });
-  
-  const stock2Data = useStockData({ 
-    stock: stocks.stock2, 
-    minDays: 30, 
-    maxDays: 365 
+
+  const stock2Data = useStockData({
+    stock: stocks.stock2,
+    minDays: 30,
+    maxDays: 365
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -153,14 +153,14 @@ export default function ComparePage() {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {stocks.stock1 && (
-                  <StockOverviewDisplay 
-                    stock={stocks.stock1} 
+                  <StockOverviewDisplay
+                    stock={stocks.stock1}
                     stockData={stock1Data}
                   />
                 )}
                 {stocks.stock2 && (
-                  <StockOverviewDisplay 
-                    stock={stocks.stock2} 
+                  <StockOverviewDisplay
+                    stock={stocks.stock2}
                     stockData={stock2Data}
                   />
                 )}
@@ -168,25 +168,21 @@ export default function ComparePage() {
             </div>
           </div>
         </header>
-        
+
         {stocks.stock1 && stocks.stock2 ? (
           <main className="p-2">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <ClientWrapper>
-                <StockGraphs 
-                  stock={stocks.stock1} 
-                  minDays={30}
-                  maxDays={365}
+                <StockGraphs
+                  stock={stocks.stock1}
                   stockData={stock1Data}
                   sharedMaxScale={sharedMaxScale > 0 ? sharedMaxScale : undefined}
                   onMaxScaleChange={(scale) => handleMaxScaleChange('stock1', scale)}
                 />
               </ClientWrapper>
               <ClientWrapper>
-                <StockGraphs 
-                  stock={stocks.stock2} 
-                  minDays={30}
-                  maxDays={365}
+                <StockGraphs
+                  stock={stocks.stock2}
                   stockData={stock2Data}
                   sharedMaxScale={sharedMaxScale > 0 ? sharedMaxScale : undefined}
                   onMaxScaleChange={(scale) => handleMaxScaleChange('stock2', scale)}

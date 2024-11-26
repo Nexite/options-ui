@@ -15,4 +15,9 @@ export default {
     },
   },
   plugins: [],
+  variants: {
+    extend: {
+      margin: ['mobile-settings-open']
+    }
+  },
 } satisfies Config;
