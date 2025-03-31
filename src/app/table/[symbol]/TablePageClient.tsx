@@ -23,7 +23,6 @@ interface ProcessedOption {
   contractId: string;
   bid: number;
   ask: number;
-  mark: number;
   roi: number;
 }
 
@@ -50,8 +49,6 @@ function ContractPopover({ details }: { details: Omit<ProcessedOption, 'discount
           <div>${details.bid.toFixed(2)}</div>
           <div className="text-gray-500 dark:text-gray-400">Ask:</div>
           <div>${details.ask.toFixed(2)}</div>
-          <div className="text-gray-500 dark:text-gray-400">Mark:</div>
-          <div>${details.mark.toFixed(2)}</div>
           <div className="text-gray-500 dark:text-gray-400">Days to Expire:</div>
           <div>{details.daysToExpire}</div>
           <div className="text-gray-500 dark:text-gray-400">ROI:</div>
@@ -126,7 +123,6 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
             const daysToExpire = Math.ceil(
               (expirationDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
             ) - 1;
-            const mark = (option.ask + option.bid) / 2;
             const roi = option.bid / option.strike;
             const annualizedRoi = (roi * 365) / daysToExpire;
 
@@ -155,7 +151,6 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
               contractId: option.contractId,
               bid: option.bid,
               ask: option.ask,
-              mark,
               roi
             };
           })
@@ -195,14 +190,13 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
             existing.rois[curr.expiration] = {
               annualizedRoi: curr.annualizedRoi,
               contractDetails: {
-                strike: curr.strike,
-                annualizedRoi: curr.annualizedRoi,
-                daysToExpire: curr.daysToExpire,
+                strike: Number(curr.strike.toString()),
+                annualizedRoi: Number(curr.annualizedRoi.toString()),
+                daysToExpire: Number(curr.daysToExpire.toString()),
                 expiration: curr.expiration,
                 contractId: curr.contractId,
-                bid: curr.bid,
-                ask: curr.ask,
-                mark: curr.mark,
+                bid: Number(curr.bid.toString()),
+                ask: Number(curr.ask.toString()),
                 roi: curr.roi
               }
             };
@@ -211,14 +205,13 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
             rois[curr.expiration] = {
               annualizedRoi: curr.annualizedRoi,
               contractDetails: {
-                strike: curr.strike,
-                annualizedRoi: curr.annualizedRoi,
-                daysToExpire: curr.daysToExpire,
+                strike: Number(curr.strike.toString()),
+                annualizedRoi: Number(curr.annualizedRoi.toString()),
+                daysToExpire: Number(curr.daysToExpire.toString()),
                 expiration: curr.expiration,
                 contractId: curr.contractId,
-                bid: curr.bid,
-                ask: curr.ask,
-                mark: curr.mark,
+                bid: Number(curr.bid.toString()),
+                ask: Number(curr.ask.toString()),
                 roi: curr.roi
               }
             };
@@ -320,7 +313,8 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
                         {(option.discount * 100).toFixed(2)}%
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap text-sm">
-                        ${option.strike.toFixed(2)}
+                        {/* ${option.strike.toFixed(2)} */}
+                        {Number(option.strike).toFixed(2)}
                       </td>
                       {expirationDates.map(date => (
                         <td 
