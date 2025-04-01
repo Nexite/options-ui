@@ -36,6 +36,8 @@ interface GroupedOption {
 }
 
 function ContractPopover({ details, position = 'top' }: { details: Omit<ProcessedOption, 'discount'>, position?: 'top' | 'bottom' }) {
+  const mark = (details.bid + details.ask) / 2;
+  
   return (
     <div className={`absolute ${position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'} left-1/2 -translate-x-1/2 w-[24rem] bg-white dark:bg-gray-800 shadow-xl rounded-lg p-4 text-sm z-50 border border-gray-200 dark:border-gray-700 backdrop-blur-sm`}>
       <div className="space-y-3">
@@ -52,6 +54,8 @@ function ContractPopover({ details, position = 'top' }: { details: Omit<Processe
           <div className="text-left font-medium">${details.bid.toFixed(2)}</div>
           <div className="text-gray-500 dark:text-gray-400 text-right">Ask:</div>
           <div className="text-left font-medium">${details.ask.toFixed(2)}</div>
+          <div className="text-gray-500 dark:text-gray-400 text-right">Mark:</div>
+          <div className="text-left font-medium">${mark.toFixed(2)}</div>
           <div className="text-gray-500 dark:text-gray-400 text-right">Days to Expire:</div>
           <div className="text-left font-medium">{details.daysToExpire}</div>
           <div className="text-gray-500 dark:text-gray-400 text-right">ROI:</div>
@@ -86,6 +90,18 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
   const [error, setError] = useState<string | null>(null);
   const [hoveredCell, setHoveredCell] = useState<{ row: number; date: string } | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Add keyboard event listener
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setHoveredCell(null);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const handleCopy = async (contractId: string, event: React.MouseEvent) => {
     event.stopPropagation(); // Prevent event bubbling
