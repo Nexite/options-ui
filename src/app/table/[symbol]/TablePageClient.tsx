@@ -89,7 +89,6 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hoveredCell, setHoveredCell] = useState<{ row: number; date: string } | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Add keyboard event listener
   useEffect(() => {
@@ -107,8 +106,6 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
     event.stopPropagation(); // Prevent event bubbling
     try {
       await navigator.clipboard.writeText(contractId);
-      setCopiedId(contractId);
-      setTimeout(() => setCopiedId(null), 2000); // Reset after 2 seconds
     } catch (err) {
       console.error('Failed to copy:', err);
     }
