@@ -149,7 +149,7 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
             const currentDate = new UTCDate(quoteData.date);
             
             const daysToExpire = Math.ceil(
-              (expirationDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24)
+              (expirationDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24) - 1
             );
             const roi = option.bid / option.strike;
             const annualizedRoi = (roi * 365) / daysToExpire;
