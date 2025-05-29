@@ -85,7 +85,7 @@ function SummaryTable({
             const contracts = data[latestDate]?.percentages[percentage] || [];
             const bestContract = [...contracts].sort((a, b) => b.annualizedRoi - a.annualizedRoi)[0];
             const nextBestContracts = contracts.slice(1);
-
+            console.log(bestContract.mark, bestContract.bid, bestContract.ask)
             return (
               <React.Fragment key={percentage}>
                 {bestContract && (
@@ -102,7 +102,7 @@ function SummaryTable({
                     </td>
                     <td className="p-4">{formatPrice(bestContract.strike)}</td>
                     <td className="p-4">{formatPrice(bestContract.bid)}</td>
-                    <td className="p-4">{formatPrice(bestContract.mark)}</td>
+                    <td className="p-4">{formatPrice(((Number(bestContract.bid) + Number(bestContract.ask)) / 2)) || 'N/A'}</td>
                     <td className="p-4">{formatPrice(bestContract.ask)}</td>
                     <td className="p-4">{bestContract.contractID}</td>
                     <td className="p-4">{bestContract.expiration}</td>

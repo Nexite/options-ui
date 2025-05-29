@@ -17,7 +17,7 @@ export default function RootLayout({
     <html suppressHydrationWarning lang="en">
       <head>
         <Script
-          src="http://stocks.nikhilgarg.com:3000/script.js"
+          src="https://analytics.nikhilgarg.com/script.js"
           data-website-id="6872013d-d46c-4513-80c7-c296a9c6033f"
           strategy="afterInteractive"
         />
