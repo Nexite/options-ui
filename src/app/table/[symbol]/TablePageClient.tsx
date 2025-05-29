@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
 import { UTCDate } from '@date-fns/utc';
+import { TZDate } from "@date-fns/tz"
 
 interface Option {
   contractId: string;
@@ -342,12 +343,12 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
                     </th>
                     {expirationDates.map(date => {
                       const daysToExpire = Math.ceil(
-                        (new UTCDate(date).getTime() - new UTCDate().getTime()) / 
+                        (new TZDate(new UTCDate(date), 'America/New_York').getTime() - new TZDate(new UTCDate(), 'America/New_York').getTime()) / 
                         (1000 * 60 * 60 * 24)
                       );
                       return (
                         <th key={date} className="px-2 py-2 text-center font-medium text-gray-500 dark:text-gray-300 text-sm">
-                          <div className="font-medium whitespace-nowrap">{format(new Date(date), 'MMM d, yyyy')}</div>
+                          <div className="font-medium whitespace-nowrap">{format(new UTCDate(date), 'MMM d, yyyy')}</div>
                           <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{daysToExpire}d</div>
                         </th>
                       );
