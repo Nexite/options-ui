@@ -1,6 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { SessionProvider } from 'next-auth/react';
+import { ThemeProvider } from '@/components/ThemeProvider';
+import UmamiUserIdentifier from '@/components/UmamiUserIdentifier';
 
 export default function RootLayoutClient({
   children,
@@ -17,5 +20,17 @@ export default function RootLayoutClient({
     return null;
   }
 
-  return children;
+  return (
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <SessionProvider>
+        <UmamiUserIdentifier />
+        {children}
+      </SessionProvider>
+    </ThemeProvider>
+  );
 } 

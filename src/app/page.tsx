@@ -1,11 +1,22 @@
 import StockForm from './components/StockForm';
+import AuthButton from '../components/AuthButton';
+import ProtectedRoute from '../components/ProtectedRoute';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
-
+/**
+ * Type definition for top 20 most actively traded stocks
+ */
 type Top20Stock = {
   ticker: string;
   change_percentage: string;
 }
 
+/**
+ * Fetches the top 20 most actively traded stocks from the API
+ * @returns Promise<Top20Stock[]> Array of stock data
+ */
 async function getTop20(): Promise<Top20Stock[]> {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (!apiBaseUrl) {
@@ -31,46 +42,70 @@ async function getTop20(): Promise<Top20Stock[]> {
   }
 }
 
+/**
+ * Home page component that displays the main interface for stock analysis
+ * Features a stock search form and displays top 20 most actively traded stocks
+ */
 export default async function Home() {
   const top20 = await getTop20();
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-1 flex flex-col items-center p-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2">Stock Analysis</h1>
-          <p className="text-gray-600">Enter a stock symbol to analyze</p>
-        </div>
-
-        <StockForm />
-
-        {top20 && top20.length > 0 && (
-          <div className="mt-12 w-full max-w-4xl">
-            <h2 className="text-2xl font-semibold text-center">Highest Volume Stocks</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-4">Note: if it fails it is likely that the stock does not have any data</p>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {top20.map((stock: any) => (
-                <a
-                  key={stock.ticker}
-                  href={`/${stock.ticker}`}
-                  className="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-200 dark:border-gray-700"
-                >
-                  <div className="text-lg font-bold">{stock.ticker}</div>
-                  {/* {stock.name && <div className="text-sm text-gray-600 dark:text-gray-400">{stock.name.split('(')[0].split(',')[0].replace('Inc.', '').replace('Corp.', '').replace('Inc', '').replace('Corp', '').trim()}</div>} */}
-                  <div className={`text-sm ${parseFloat(stock.change_percentage) >= 0
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-red-600 dark:text-red-400'
-                    }`}>
-                    {parseFloat(stock.change_percentage) >= 0 ? '+' : ''}
-                    {stock.change_percentage}
-                  </div>
-                </a>
-              ))}
+    <ProtectedRoute>
+      <div className="min-h-screen flex flex-col bg-background">
+        {/* Header with navigation and authentication */}
+        <header className="bg-background shadow-sm border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center h-16">
+              <h1 className="text-xl font-semibold text-foreground">Options Analyzer</h1>
+              <AuthButton />
             </div>
           </div>
-        )}
-      </main>
-    </div>
+        </header>
+
+        {/* Main content area */}
+        <main className="flex-1 flex flex-col items-center p-8">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold mb-2 text-foreground">Stock Analysis</h1>
+            <p className="text-muted-foreground">Enter a stock symbol to analyze</p>
+          </div>
+
+          {/* Stock search form */}
+          <StockForm />
+
+          {/* Top 20 most actively traded stocks */}
+          {top20 && top20.length > 0 && (
+            <div className="mt-12 w-full max-w-4xl">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-semibold text-foreground">Highest Volume Stocks</h2>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Note: if it fails it is likely that the stock does not have any data
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {top20.map((stock: any) => (
+                  <Link key={stock.ticker} href={`/${stock.ticker}`}>
+                    <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">{stock.ticker}</CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <Badge 
+                          variant={parseFloat(stock.change_percentage) >= 0 ? "default" : "destructive"}
+                          className="text-sm"
+                        >
+                          {parseFloat(stock.change_percentage) >= 0 ? '+' : ''}
+                          {stock.change_percentage}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
+    </ProtectedRoute>
   );
 }

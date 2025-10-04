@@ -8,6 +8,10 @@ import ClientWrapper from '../[stock]/ClientWrapper';
 import { useStockData } from '@/hooks/useStockData';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 
+/**
+ * StockOverviewDisplay component shows basic stock information and status
+ * Displays stock symbol, loading state, errors, and key metrics
+ */
 function StockOverviewDisplay({
   stock,
   stockData
@@ -17,23 +21,23 @@ function StockOverviewDisplay({
 }) {
   return (
     <div className="flex items-center gap-4">
-      <h2 className="text-lg font-semibold">{stock.toUpperCase()}</h2>
-      {stockData.loading && <span className="text-sm text-gray-500 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">Loading...</span>}
-      {stockData.error && <span className="text-sm text-red-500 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded">Error: {stockData.error}</span>}
+      <h2 className="text-lg font-semibold text-foreground">{stock.toUpperCase()}</h2>
+      {stockData.loading && <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded">Loading...</span>}
+      {stockData.error && <span className="text-sm text-destructive bg-destructive/10 px-2 py-1 rounded">Error: {stockData.error}</span>}
       {stockData.stockOverview && (
         <div className="flex items-center gap-4">
           {stockData.stockOverview.price && (
-            <span className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+            <span className="text-sm text-foreground bg-muted px-2 py-1 rounded">
               ${stockData.stockOverview.price.toFixed(2)}
             </span>
           )}
           {stockData.stockOverview['52WeekHigh'] && (
-            <span className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+            <span className="text-sm text-foreground bg-muted px-2 py-1 rounded">
               52W High: ${stockData.stockOverview['52WeekHigh'].toFixed(2)}
             </span>
           )}
           {stockData.stockOverview['52WeekLow'] && (
-            <span className="text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded">
+            <span className="text-sm text-foreground bg-muted px-2 py-1 rounded">
               52W Low: ${stockData.stockOverview['52WeekLow'].toFixed(2)}
             </span>
           )}
@@ -43,6 +47,10 @@ function StockOverviewDisplay({
   );
 }
 
+/**
+ * ComparePage component allows side-by-side comparison of two stocks
+ * Features synchronized scaling between charts and real-time data updates
+ */
 export default function ComparePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -56,7 +64,7 @@ export default function ComparePage() {
     stock2: 0
   });
 
-  // Add stock data hooks for both stocks
+  // Stock data hooks for both stocks being compared
   const stock1Data = useStockData({
     stock: stocks.stock1,
     minDays: 30,
@@ -69,12 +77,21 @@ export default function ComparePage() {
     maxDays: 365
   });
 
+  /**
+   * Handles form submission for stock comparison
+   * Resets scales and updates stock symbols
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setScales({ stock1: 0, stock2: 0 });
     setStocks(inputStocks);
   };
 
+  /**
+   * Handles maximum scale changes for synchronized chart scaling
+   * @param stockKey - Which stock's scale changed
+   * @param newScale - The new maximum scale value
+   */
   const handleMaxScaleChange = useCallback((stockKey: 'stock1' | 'stock2', newScale: number) => {
     setScales(prev => ({
       ...prev,
@@ -111,20 +128,20 @@ export default function ComparePage() {
         </title>
         <link rel="preconnect" href="https://stocks.nikhilgarg.com" />
       </Head>
-      <div className="min-h-screen">
-        <header className="sticky top-0 bg-background z-10 border-b dark:border-gray-800">
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 bg-background z-10 border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col py-4 gap-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <button
                     onClick={() => router.push('/')}
-                    className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="p-2 rounded-full hover:bg-muted"
                     aria-label="Go back"
                   >
                     <ArrowLeftIcon className="h-5 w-5" />
                   </button>
-                  <h1 className="text-xl font-bold">Compare Stocks</h1>
+                  <h1 className="text-xl font-bold text-foreground">Compare Stocks</h1>
                 </div>
 
                 <form onSubmit={handleSubmit} className="flex gap-2">
@@ -133,18 +150,18 @@ export default function ComparePage() {
                     value={inputStocks.stock1}
                     onChange={(e) => setInputStocks(prev => ({ ...prev, stock1: e.target.value }))}
                     placeholder="First stock"
-                    className="px-3 py-1 border rounded-md dark:bg-gray-800 dark:border-gray-700"
+                    className="px-3 py-1 border rounded-md bg-background border-input"
                   />
                   <input
                     type="text"
                     value={inputStocks.stock2}
                     onChange={(e) => setInputStocks(prev => ({ ...prev, stock2: e.target.value }))}
                     placeholder="Second stock"
-                    className="px-3 py-1 border rounded-md dark:bg-gray-800 dark:border-gray-700"
+                    className="px-3 py-1 border rounded-md bg-background border-input"
                   />
                   <button
                     type="submit"
-                    className="px-4 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+                    className="px-4 py-1 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
                   >
                     Compare
                   </button>
@@ -191,7 +208,7 @@ export default function ComparePage() {
             </div>
           </main>
         ) : (
-          <div className="text-center p-8 text-gray-600">
+          <div className="text-center p-8 text-muted-foreground">
             Enter two stock symbols to compare
           </div>
         )}
