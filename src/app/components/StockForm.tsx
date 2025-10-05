@@ -54,9 +54,13 @@ export default function StockForm() {
               ref={inputRef}
               type="text"
               value={formData.symbol}
-              onChange={(e) => setFormData(prev => ({ ...prev, symbol: e.target.value }))}
+              onChange={(e) => {
+                // Only allow letters and numbers, and transform to uppercase
+                const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                setFormData(prev => ({ ...prev, symbol: value }));
+              }}
               placeholder="Enter stock symbol (e.g., AAPL)"
-              className="pr-10"
+              className="pr-10 [&::placeholder]:normal-case uppercase"
               required
             />
             <Popover open={showAdvanced} onOpenChange={setShowAdvanced}>

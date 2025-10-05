@@ -32,13 +32,38 @@ function StockInfo({ data }: { data: StockOptionData }) {
   };
 
   return (
-    <div className="text-sm space-y-1">
-      <p className="text-foreground">Strike: ${data.strike}</p>
-      <p className="text-foreground">Contract: {data.contractID}</p>
-      <p className="text-foreground">Expiration: {data.expiration}</p>
-      <p className="text-foreground">Days to Expire: {data.daysToExpire}</p>
-      <p className="text-foreground">ROI: {formatPercentage(data.roi)}</p>
-      <p className="text-foreground">Annualized ROI: {formatPercentage(data.annualizedRoi)}</p>
+    <div className="bg-card border rounded-lg p-4 shadow-sm">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 text-sm">
+        <div className="space-y-1">
+          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Strike</p>
+          <p className="text-foreground font-semibold">${data.strike}</p>
+        </div>
+        
+        <div className="space-y-1">
+          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Contract</p>
+          <p className="text-foreground font-mono text-xs">{data.contractID}</p>
+        </div>
+        
+        <div className="space-y-1">
+          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Expiration</p>
+          <p className="text-foreground">{data.expiration}</p>
+        </div>
+        
+        <div className="space-y-1">
+          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Days to Expire</p>
+          <p className="text-foreground font-semibold">{data.daysToExpire}</p>
+        </div>
+        
+        <div className="space-y-1">
+          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">ROI</p>
+          <p className="text-foreground font-semibold">{formatPercentage(data.roi)}</p>
+        </div>
+        
+        <div className="space-y-1">
+          <p className="text-muted-foreground text-xs font-medium uppercase tracking-wide">Annualized ROI</p>
+          <p className="text-foreground font-semibold">{formatPercentage(data.annualizedRoi)}</p>
+        </div>
+      </div>
     </div>
   );
 }
@@ -289,15 +314,44 @@ export default function StockGraphs({
         {percentages.map((percentage) => {
           const contracts = stockData.data[latestDate]?.percentages[percentage] || [];
           const bestContract = [...contracts].sort((a, b) => b.annualizedRoi - a.annualizedRoi)[0];
+          
+          // Calculate average ROI for this percentage across all dates
+          const averageRoi = stockData.dates.reduce((sum, date) => {
+            const dayContracts = stockData.data[date]?.percentages[percentage] || [];
+            const dayBestContract = dayContracts[0];
+            return sum + (dayBestContract?.annualizedRoi || 0);
+          }, 0) / stockData.dates.length;
+          
           return (
             <Card key={percentage} className="w-full">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{percentage}% Strike</CardTitle>
-                  {bestContract && <StockInfo data={bestContract} />}
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-center gap-8">
+                  <CardTitle className="text-xl font-bold">{percentage}% Strike</CardTitle>
+                  {bestContract && (
+                    <div className="flex items-center gap-6 text-sm">
+                      <div className="text-center">
+                        <p className="text-muted-foreground text-xs">Avg ROI</p>
+                        <p className="font-semibold">{(averageRoi * 100).toFixed(2)}%</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-muted-foreground text-xs">Current ROI</p>
+                        <p className={`font-semibold ${
+                          bestContract.annualizedRoi >= averageRoi 
+                            ? 'text-green-600' 
+                            : 'text-red-600'
+                        }`}>
+                          {(bestContract.annualizedRoi * 100).toFixed(2)}%
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-muted-foreground text-xs">Strike</p>
+                        <p className="font-semibold">${bestContract.strike}</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-0">
                 <div className="h-[400px] w-full">
                   <Suspense fallback={<div className="h-full w-full flex items-center justify-center">Loading chart...</div>}>
                     <StockChart
@@ -309,6 +363,11 @@ export default function StockGraphs({
                     />
                   </Suspense>
                 </div>
+                {bestContract && (
+                  <div className="p-4 border-t">
+                    <StockInfo data={bestContract} />
+                  </div>
+                )}
               </CardContent>
             </Card>
           );

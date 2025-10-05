@@ -123,7 +123,11 @@ export default function StockHeader({ initialStock, loading, error, stockOvervie
               <input
                 type="text"
                 value={symbol}
-                onChange={(e) => setSymbol(e.target.value)}
+                onChange={(e) => {
+                  // Only allow letters and numbers, and transform to uppercase
+                  const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                  setSymbol(value);
+                }}
                 placeholder="Enter symbol"
                 className="w-36 px-3 py-1 border rounded-md dark:bg-gray-800 dark:border-gray-700"
               />

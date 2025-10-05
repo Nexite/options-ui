@@ -154,7 +154,11 @@ export default function StockPageClient({ stock, minDays, maxDays }: StockPageCl
                   <Input
                     type="text"
                     value={symbol}
-                    onChange={(e) => setSymbol(e.target.value)}
+                    onChange={(e) => {
+                      // Only allow letters and numbers, and transform to uppercase
+                      const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                      setSymbol(value);
+                    }}
                     placeholder="Enter symbol"
                     className="w-36"
                   />
