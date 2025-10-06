@@ -19,7 +19,9 @@ type Top20Stock = {
  */
 async function getTop20(): Promise<Top20Stock[]> {
   try {
-    const response = await fetch(`/api/alphavantage?function=TOP_GAINERS_LOSERS&username=nikhil`, {
+    const apiBaseUrl = process.env.API_BASE_URL;
+    if (!apiBaseUrl) throw new Error('APP_BASE_URL not configured');
+    const response = await fetch(`${apiBaseUrl}/alphavantage?function=TOP_GAINERS_LOSERS&username=nikhil`, {
       next: {
         revalidate: 3600 // Revalidate every hour (3600 seconds)
       }
