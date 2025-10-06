@@ -18,7 +18,7 @@ export default function RootLayout({
       <head>
         <Script
           src="https://analytics.nikhilgarg.com/script.js"
-          data-website-id="6872013d-d46c-4513-80c7-c296a9c6033f"
+          data-website-id="2515a2c2-1600-4a37-a634-c75826725fa5"
           strategy="afterInteractive"
         />
       </head>
