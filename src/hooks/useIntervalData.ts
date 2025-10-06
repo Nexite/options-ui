@@ -18,7 +18,7 @@ interface UseIntervalDataProps {
     enabled: boolean;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
+// Use internal proxy routes from the client
 
 function formatDateToEST(date: Date): string {
     // Convert to EST
@@ -43,7 +43,7 @@ export function useIntervalData({ symbol, startDate, endDate, enabled }: UseInte
             setLoading(true);
             setError(null);
             try {
-                const response = await fetch(`${API_BASE_URL}/options-interval?symbol=${symbol}&startDate=${startDateString}&endDate=${endDateString}`);
+                const response = await fetch(`/api/options-interval?symbol=${symbol}&startDate=${startDateString}&endDate=${endDateString}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch interval data');
                 }

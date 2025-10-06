@@ -2,8 +2,8 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect, useRef, useState } from 'react';
+import { LoadingState } from '@/components/ui/loading';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,6 +17,8 @@ interface ProtectedRouteProps {
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [showLoader, setShowLoader] = useState(false);
+  const loaderTimerRef = useRef<number | null>(null);
 
   // Redirect to sign-in if not authenticated
   useEffect(() => {
@@ -27,17 +29,32 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     }
   }, [session, status, router]);
 
-  // Loading state with skeleton
-  if (status === 'loading') {
+  // Debounce the auth loader to avoid flashing on fast resolutions
+  useEffect(() => {
+    if (status === 'loading') {
+      if (loaderTimerRef.current === null) {
+        loaderTimerRef.current = window.setTimeout(() => setShowLoader(true), 150);
+      }
+    } else {
+      if (loaderTimerRef.current !== null) {
+        window.clearTimeout(loaderTimerRef.current);
+        loaderTimerRef.current = null;
+      }
+      setShowLoader(false);
+    }
+    return () => {
+      if (loaderTimerRef.current !== null) {
+        window.clearTimeout(loaderTimerRef.current);
+        loaderTimerRef.current = null;
+      }
+    };
+  }, [status]);
+
+  // Loading state
+  if (status === 'loading' && showLoader) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-24" />
-          </div>
-        </div>
+        <LoadingState message="Authenticating..." size="xl" />
       </div>
     );
   }

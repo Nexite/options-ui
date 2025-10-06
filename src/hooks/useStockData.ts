@@ -5,8 +5,8 @@ import type {
   HistoricalQuote,
   HistoricalOption,
 } from '@/types/stock';
-import { processQuotesAndOptions } from './utils/processQuotesAndOptions';
-import { fetchHistoricalData, BATCH_SIZE } from './utils/fetchHistoricalData';
+import { BATCH_SIZE } from './utils/fetchHistoricalData';
+import { fetchWithRetry } from './utils/fetchWithRetry';
 import { fetchStockOverview } from './utils/fetchStockOverview';
 
 // Cache management
@@ -45,18 +45,31 @@ export function useStockData({ stock, minDays, maxDays }: StockDataHookProps) {
       requestCache.add(requestKey);
       
       try {
-        const [quotes, options] = await fetchHistoricalData(stock, loadedDays);
-        const newData = processQuotesAndOptions(quotes, options, loadedDays === 0, minDays, maxDays, stock);
+        const params = new URLSearchParams({
+          symbol: stock,
+          days: String(BATCH_SIZE),
+          skip: String(loadedDays),
+          minDays: String(minDays),
+          maxDays: String(maxDays),
+          isLatest: String(loadedDays === 0)
+        });
+        const processedRes = await fetchWithRetry(`/api/processedHistorical?${params.toString()}`);
+        if (!processedRes.ok) throw new Error('Failed to fetch processed data');
+        const processedJson = await processedRes.json();
+        const newData = processedJson.data;
         let overview = state.stockOverview;
         if (overview === null) {
           const stockOverview = await fetchStockOverview(stock);
+          // Fetch latest price separately
+          const priceRes = await fetchWithRetry(`/api/latestQuote?symbol=${stock}`);
+          const priceJson = priceRes.ok ? await priceRes.json() : { price: undefined };
           console.log('Raw stock overview:', stockOverview);
           
           overview = {
             '52WeekHigh': Number(stockOverview['52WeekHigh']),
             '52WeekLow': Number(stockOverview['52WeekLow']),
             Name: stockOverview.Name,
-            price: quotes[0].price
+            price: typeof priceJson.price === 'number' ? priceJson.price : 0
           };
           console.log('Processed overview:', overview);
         }

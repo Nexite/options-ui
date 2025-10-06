@@ -2,18 +2,18 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import dynamic from 'next/dynamic';
-import { LoadingProgress } from '@/components/LoadingProgress';
+import { LoadingState } from '@/components/ui/loading';
 import type { StockOptionData, StockDataResponse } from '@/types/stock';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import React from 'react';
-import { LoadingOverlay } from '@/components/LoadingOverlay';
+import { LoadingOverlay } from '@/components/ui/loading';
 import { useStockData } from '@/hooks/useStockData';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 const StockChart = dynamic(() => import('./StockChart'), {
   ssr: false,
-  loading: () => <div className="h-[300px] flex items-center justify-center">Loading chart...</div>
+  loading: () => <LoadingState message="Loading chart..." className="h-[300px]" />
 });
 
 /**
@@ -263,7 +263,7 @@ export default function StockGraphs({
   }
 
   if (stockData.loading && !isLoadingMore) {
-    return <LoadingProgress />;
+    return <LoadingState message="Loading stock data..." className="h-64" />;
   }
 
   if (stockData.dates.length === 0) {
@@ -276,7 +276,7 @@ export default function StockGraphs({
 
   return (
     <div className="flex flex-col w-full relative">
-      {isLoadingMore && <LoadingOverlay />}
+      {isLoadingMore && <LoadingOverlay message="Loading more data..." />}
       <SummaryTable 
         data={stockData.data} 
         dates={stockData.dates} 
@@ -353,7 +353,7 @@ export default function StockGraphs({
               </CardHeader>
               <CardContent className="p-0">
                 <div className="h-[400px] w-full">
-                  <Suspense fallback={<div className="h-full w-full flex items-center justify-center">Loading chart...</div>}>
+                  <Suspense fallback={<LoadingState message="Loading chart..." className="h-full" />}>
                     <StockChart
                       percentage={percentage}
                       dates={stockData.dates}

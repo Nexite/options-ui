@@ -9,14 +9,7 @@ import { TZDate } from "@date-fns/tz"
 import AuthButton from '@/components/AuthButton';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Card } from '@/components/ui/card';
-
-interface Option {
-  contractId: string;
-  strike: number;
-  bid: number;
-  ask: number;
-  expiration: string;
-}
+import { LoadingState } from '@/components/ui/loading';
 
 interface ProcessedOption {
   strike: number;
@@ -86,17 +79,7 @@ function ContractPopover({ details, position = 'top' }: { details: Omit<Processe
  * @param contractId - The contract ID to check
  * @returns True if the option is adjusted, false otherwise
  */
-function isAdjustedOption(contractId: string): boolean {
-  // Option format: {ticker}{optional digit if adjusted}{6 digits for date}{option type}{strike price}
-  // Example regular: AAPL240419P00150000
-  // Example adjusted: AAPL1240419P00150000
-  
-  const tickerEnd = contractId.length - 15; // Remove date(6) + type(1) + strike(8)
-  const ticker = contractId.slice(0, tickerEnd);
-  
-  // If ticker part contains any digits, it's an adjusted option
-  return /\d/.test(ticker);
-}
+// Option interface and isAdjustedOption were used in client-side processing, now handled on server
 
 /**
  * TablePageClient component displays a comprehensive options chain table
@@ -142,148 +125,13 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
       try {
         setLoading(true);
         setError(null);
-        const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000';
-        
-        // Fetch current stock price
-        const quoteResponse = await fetch(
-          `${API_BASE_URL}/latestQuote?symbol=${symbol}`
-        );
-        if (!quoteResponse.ok) throw new Error('Failed to fetch stock price');
-        const quoteData = await quoteResponse.json();
-        console.log('Quote data:', quoteData);
-        const currentPrice = quoteData.price;
-        setCurrentPrice(currentPrice);
-
-        // Fetch options chain
-        const optionsResponse = await fetch(
-          `${API_BASE_URL}/latestOptions?symbol=${symbol}`
-        );
-        if (!optionsResponse.ok) throw new Error('Failed to fetch options data');
-        const optionsData = await optionsResponse.json();
-        console.log('Options data:', optionsData);
-        
-        if (!optionsData.puts) {
-          throw new Error('No options data available');
-        }
-
-        // Process options data
-        const processedOptions = optionsData.puts
-          .filter((option: Option) => !isAdjustedOption(option.contractId)) // Filter out adjusted options
-          .map((option: Option) => {
-            const discount = 1 - (option.strike / currentPrice);
-            const expirationDate = new UTCDate(option.expiration);
-            const currentDate = new UTCDate(quoteData.date);
-            
-            const daysToExpire = Math.ceil(
-              (expirationDate.getTime() - currentDate.getTime()) / (1000 * 60 * 60 * 24) - 1
-            );
-            const roi = option.bid / option.strike;
-            const annualizedRoi = (roi * 365) / daysToExpire;
-
-            console.log(`Processing option:`, {
-              contractId: option.contractId,
-              strike: option.strike,
-              bid: option.bid,
-              ask: option.ask,
-              expiration: option.expiration,
-              daysToExpire,
-              roi,
-              annualizedRoi,
-              isNaN: isNaN(annualizedRoi),
-              isFinite: isFinite(annualizedRoi),
-              belowCurrentPrice: option.strike < currentPrice,
-              isAdjusted: isAdjustedOption(option.contractId),
-              currentPrice
-            });
-
-            return {
-              strike: option.strike,
-              discount,
-              annualizedRoi,
-              daysToExpire,
-              expiration: option.expiration,
-              contractId: option.contractId,
-              bid: option.bid,
-              ask: option.ask,
-              roi
-            };
-          })
-          .filter((option: ProcessedOption) => {
-            const isValid = !isNaN(option.annualizedRoi) && 
-              isFinite(option.annualizedRoi) &&
-              option.strike < currentPrice;
-            
-            if (!isValid) {
-              console.log(`Filtered out option:`, {
-                strike: option.strike,
-                annualizedRoi: option.annualizedRoi,
-                reason: {
-                  isNaN: isNaN(option.annualizedRoi),
-                  isNotFinite: !isFinite(option.annualizedRoi),
-                  notBelowCurrentPrice: option.strike >= currentPrice
-                }
-              });
-            }
-            return isValid;
-          });
-
-        console.log('Processed options:', processedOptions);
-
-        // Get unique expiration dates
-        const uniqueDates = [...new Set(processedOptions.map((opt: ProcessedOption) => opt.expiration))];
-        const dates = uniqueDates
-          .map(date => date as string)
-          .sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
-        console.log('Expiration dates:', dates);
-        setExpirationDates(dates);
-
-        // Group options by strike price
-        const grouped = processedOptions.reduce((acc: GroupedOption[], curr: ProcessedOption) => {
-          const existing = acc.find(g => g.strike === curr.strike);
-          if (existing) {
-            existing.rois[curr.expiration] = {
-              annualizedRoi: curr.annualizedRoi,
-              contractDetails: {
-                strike: curr.strike,
-                annualizedRoi: curr.annualizedRoi,
-                daysToExpire: curr.daysToExpire,
-                expiration: curr.expiration,
-                contractId: curr.contractId,
-                bid: curr.bid,
-                ask: curr.ask,
-                roi: curr.roi
-              }
-            };
-          } else {
-            const rois: GroupedOption['rois'] = {};
-            rois[curr.expiration] = {
-              annualizedRoi: curr.annualizedRoi,
-              contractDetails: {
-                strike: curr.strike,
-                annualizedRoi: curr.annualizedRoi,
-                daysToExpire: curr.daysToExpire,
-                expiration: curr.expiration,
-                contractId: curr.contractId,
-                bid: curr.bid,
-                ask: curr.ask,
-                roi: curr.roi
-              }
-            };
-            acc.push({
-              strike: curr.strike,
-              discount: curr.discount,
-              rois
-            });
-          }
-          return acc;
-        }, []);
-
-        console.log('Grouped options before sorting:', grouped);
-
-        // Sort by discount ascending (lowest discount first)
-        const sortedGrouped = grouped.sort((a: GroupedOption, b: GroupedOption) => a.discount - b.discount);
-        console.log('Sorted grouped options:', sortedGrouped);
-        setGroupedOptions(sortedGrouped);
+        // Fetch processed table data via proxy
+        const tableRes = await fetch(`/api/tableData?symbol=${symbol}`);
+        if (!tableRes.ok) throw new Error('Failed to fetch table data');
+        const tableJson = await tableRes.json();
+        setCurrentPrice(tableJson.currentPrice);
+        setExpirationDates(tableJson.expirationDates);
+        setGroupedOptions(tableJson.groupedOptions);
       } catch (err) {
         console.error('Error in fetchData:', err);
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -346,10 +194,7 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
 
         <Card>
           {loading ? (
-            <div className="flex flex-col justify-center items-center h-[300px] gap-3">
-              <div className="animate-spin rounded-full h-8 w-8 border-3 border-primary border-t-transparent"></div>
-              <p className="text-sm text-muted-foreground">Loading options data...</p>
-            </div>
+            <LoadingState message="Loading options data..." className="h-[300px]" />
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-[300px] p-6 text-center">
               <div className="text-destructive text-lg mb-2">⚠️</div>
