@@ -41,7 +41,6 @@ export default function StockChart({ percentage, dates, data, displayDays, maxSc
   console.log(`Chart data for ${percentage}%:`, chartData);
 
   const averageRoi = chartData.reduce((sum, day) => sum + day.roi, 0) / chartData.length;
-  const mostRecentRoi = chartData[chartData.length - 1]?.roi || 0;
 
   useEffect(() => {
     if (!svgRef.current || chartData.length === 0) return;
