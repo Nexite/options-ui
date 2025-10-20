@@ -37,7 +37,6 @@ export async function GET(req: NextRequest) {
 
     const quoteData = await quoteRes.json();
     const currentPrice: number = quoteData.price;
-    const currentDate: string = quoteData.date;
     const optionsData = await optionsRes.json();
 
     if (!optionsData.puts) {
