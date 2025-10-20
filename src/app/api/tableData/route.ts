@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parseISO } from 'date-fns';
+import { TZDate } from '@date-fns/tz';
 
 export const revalidate = 15; // seconds
 
@@ -48,8 +50,17 @@ export async function GET(req: NextRequest) {
       .map((opt: any) => {
         const discount = 1 - (opt.strike / currentPrice);
         const expiration = opt.expiration;
+        // Calculate days to expire using Eastern timezone for consistency
+        const nowET = new TZDate(new Date(), 'America/New_York');
+        const expirationDate = parseISO(expiration);
+        const year = expirationDate.getUTCFullYear();
+        const month = expirationDate.getUTCMonth();
+        const day = expirationDate.getUTCDate();
+        const expirationStartOfDayET = new TZDate(year, month, day, 'America/New_York');
+        const nowStartOfDayET = new TZDate(nowET.getFullYear(), nowET.getMonth(), nowET.getDate(), 'America/New_York');
+        
         const daysToExpire = Math.ceil(
-          (new Date(expiration).getTime() - new Date(currentDate).getTime()) / (1000 * 60 * 60 * 24) - 1
+          (expirationStartOfDayET.getTime() - nowStartOfDayET.getTime()) / (1000 * 60 * 60 * 24)
         );
         const roi = opt.bid / opt.strike;
         const annualizedRoi = (roi * 365) / daysToExpire;
