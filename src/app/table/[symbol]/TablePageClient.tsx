@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { format } from 'date-fns';
-import { UTCDate } from '@date-fns/utc';
 import { TZDate } from "@date-fns/tz"
 import AuthButton from '@/components/AuthButton';
 import ProtectedRoute from '@/components/ProtectedRoute';
@@ -41,6 +40,20 @@ interface GroupedOption {
 function ContractPopover({ details, position = 'top' }: { details: Omit<ProcessedOption, 'discount'>, position?: 'top' | 'bottom' }) {
   const mark = (details.bid + details.ask) / 2;
   
+  // Calculate days to expire using Eastern timezone
+  const nowET = new TZDate(new Date(), 'America/New_York');
+  
+  // Parse the expiration date string properly - it's in YYYY-MM-DD format
+  const [year, month, day] = details.expiration.split('-').map(Number);
+  const expirationStartOfDayET = new TZDate(year, month - 1, day, 'America/New_York');
+  
+  // Set current date to start of day for accurate calculation
+  const nowStartOfDayET = new TZDate(nowET.getFullYear(), nowET.getMonth(), nowET.getDate(), 'America/New_York');
+  
+  const correctDaysToExpire = Math.ceil(
+    (expirationStartOfDayET.getTime() - nowStartOfDayET.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  
   return (
     <div className={`absolute ${position === 'top' ? 'bottom-full mb-2' : 'top-full mt-2'} left-1/2 -translate-x-1/2 w-[24rem] bg-popover shadow-xl rounded-lg p-4 text-sm z-50 border backdrop-blur-sm`}>
       <div className="space-y-3">
@@ -60,7 +73,7 @@ function ContractPopover({ details, position = 'top' }: { details: Omit<Processe
           <div className="text-muted-foreground text-right">Mark:</div>
           <div className="text-left font-medium text-popover-foreground">${mark.toFixed(2)}</div>
           <div className="text-muted-foreground text-right">Days to Expire:</div>
-          <div className="text-left font-medium text-popover-foreground">{details.daysToExpire}</div>
+          <div className="text-left font-medium text-popover-foreground">{correctDaysToExpire}</div>
           <div className="text-muted-foreground text-right">ROI:</div>
           <div className="text-left font-medium text-green-600 dark:text-green-400">{(details.roi * 100).toFixed(2)}%</div>
           <div className="text-muted-foreground text-right">Annualized ROI:</div>
@@ -72,14 +85,6 @@ function ContractPopover({ details, position = 'top' }: { details: Omit<Processe
     </div>
   );
 }
-
-/**
- * Determines if an option contract is an adjusted option
- * Adjusted options have digits in the ticker portion of the contract ID
- * @param contractId - The contract ID to check
- * @returns True if the option is adjusted, false otherwise
- */
-// Option interface and isAdjustedOption were used in client-side processing, now handled on server
 
 /**
  * TablePageClient component displays a comprehensive options chain table
@@ -130,8 +135,34 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
         if (!tableRes.ok) throw new Error('Failed to fetch table data');
         const tableJson = await tableRes.json();
         setCurrentPrice(tableJson.currentPrice);
-        setExpirationDates(tableJson.expirationDates);
-        setGroupedOptions(tableJson.groupedOptions);
+        
+        // Filter out past expiration dates using Eastern timezone
+        const nowET = new TZDate(new Date(), 'America/New_York');
+        
+        const validExpirationDates = tableJson.expirationDates
+          .filter((date: string) => {
+            // Parse the date string properly - it's in YYYY-MM-DD format
+            const [year, month, day] = date.split('-').map(Number);
+            const expirationStartOfDayET = new TZDate(year, month - 1, day, 'America/New_York');
+            
+            // Set current date to start of day for accurate comparison
+            const nowStartOfDayET = new TZDate(nowET.getFullYear(), nowET.getMonth(), nowET.getDate(), 'America/New_York');
+            
+            // Only include dates that are today or in the future (in Eastern time)
+            return expirationStartOfDayET >= nowStartOfDayET;
+          })
+          .sort((a: string, b: string) => new Date(a).getTime() - new Date(b).getTime());
+        
+        // Filter groupedOptions to remove data for past expiration dates
+        const filteredGroupedOptions = tableJson.groupedOptions.map((option: any) => ({
+          ...option,
+          rois: Object.fromEntries(
+            Object.entries(option.rois).filter(([date, _]) => validExpirationDates.includes(date))
+          )
+        })).filter((option: any) => Object.keys(option.rois).length > 0);
+        
+        setExpirationDates(validExpirationDates);
+        setGroupedOptions(filteredGroupedOptions);
       } catch (err) {
         console.error('Error in fetchData:', err);
         setError(err instanceof Error ? err.message : 'An error occurred');
@@ -224,14 +255,26 @@ export default function TablePageClient({ symbol }: { symbol: string }) {
                       Strike
                     </th>
                     {expirationDates.map(date => {
+                      // Calculate days to expire using Eastern timezone
+                      const nowET = new TZDate(new Date(), 'America/New_York');
+                      
+                      // Parse the date string properly - it's in YYYY-MM-DD format
+                      const [year, month, day] = date.split('-').map(Number);
+                      const expirationStartOfDayET = new TZDate(year, month - 1, day, 'America/New_York');
+                      
+                      // Set current date to start of day for accurate calculation
+                      const nowStartOfDayET = new TZDate(nowET.getFullYear(), nowET.getMonth(), nowET.getDate(), 'America/New_York');
+                      
                       const daysToExpire = Math.ceil(
-                        (new TZDate(new UTCDate(date), 'America/New_York').getTime() - new TZDate(new UTCDate(), 'America/New_York').getTime()) / 
-                        (1000 * 60 * 60 * 24)
+                        (expirationStartOfDayET.getTime() - nowStartOfDayET.getTime()) / (1000 * 60 * 60 * 24)
                       );
+                      
                       return (
                         <th key={date} className="px-2 py-2 text-center font-medium text-muted-foreground text-sm">
-                          <div className="font-medium whitespace-nowrap">{format(new UTCDate(date), 'MMM d, yyyy')}</div>
-                          <div className="text-xs text-muted-foreground mt-0.5">{daysToExpire}d</div>
+                          <div className="font-medium whitespace-nowrap">{format(expirationStartOfDayET, 'MMM d, yyyy')}</div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {daysToExpire === 0 ? 'Today' : daysToExpire > 0 ? `${daysToExpire}d` : `${Math.abs(daysToExpire)}d ago`}
+                          </div>
                         </th>
                       );
                     })}
