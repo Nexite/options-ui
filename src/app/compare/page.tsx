@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Head from 'next/head';
 import StockGraphs from '../[stock]/StockGraphs';
 import ClientWrapper from '../[stock]/ClientWrapper';
 import { useStockData } from '@/hooks/useStockData';
@@ -119,16 +118,7 @@ export default function ComparePage() {
   }, [stocks.stock1, stocks.stock2]);
 
   return (
-    <>
-      <Head>
-        <title>
-          {stocks.stock1 && stocks.stock2
-            ? `${stocks.stock1.toUpperCase()}/${stocks.stock2.toUpperCase()} - Options Analysis`
-            : 'Compare Stocks - Options Analysis'}
-        </title>
-        <link rel="preconnect" href="https://stocks.nikhilgarg.com" />
-      </Head>
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         <header className="sticky top-0 bg-background z-10 border-b">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex flex-col py-4 gap-4">
@@ -212,7 +202,6 @@ export default function ComparePage() {
             Enter two stock symbols to compare
           </div>
         )}
-      </div>
-    </>
+    </div>
   );
 } 
